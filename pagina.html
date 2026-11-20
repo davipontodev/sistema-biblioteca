@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="layout-box">
+        <aside class="painel-preto">
+            <h1>Biblioteca</h1>
+            <p>Sistema de empréstimo de livros feito com Python, Flask e SQLite.</p>
+            <nav>
+                <a href="{{ url_for('livros') }}" class="{{ 'ativo' if aba == 'livros' }}">Livros</a>
+                <a href="{{ url_for('leitores') }}" class="{{ 'ativo' if aba == 'leitores' }}">Leitores</a>
+                <a href="{{ url_for('emprestimos') }}" class="{{ 'ativo' if aba == 'emprestimos' }}">Empréstimos</a>
+                <a href="{{ url_for('relatorios') }}" class="{{ 'ativo' if aba == 'relatorios' }}">Relatórios</a>
+            </nav>
+        </aside>
+
+        <main class="conteudo">
+            {% with mensagens = get_flashed_messages(with_categories=true) %}
+                {% for categoria, mensagem in mensagens %}
+                    <div class="alerta {{ categoria }}">{{ mensagem }}</div>
+                {% endfor %}
+            {% endwith %}
+
+            {% if aba == 'livros' %}
+                <h2>Livros</h2>
+                <form method="GET" class="linha">
+                    <input type="text" name="busca" value="{{ busca }}" placeholder="Buscar por título ou autor">
+                    <button class="btn-preto">Buscar</button>
+                </form>
+
+                <table>
+                    <thead>
+                        <tr><th>ID</th><th>Título</th><th>Autor</th><th>Ano</th><th>Disponíveis</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for l in livros %}
+                            <tr>
+                                <td>{{ l['id'] }}</td>
+                                <td>{{ l['titulo'] }}</td>
+                                <td>{{ l['autor'] }}</td>
+                                <td>{{ l['ano'] or '-' }}</td>
+                                <td><span class="tag {{ 'zerado' if l['disponiveis'] == 0 }}">{{ l['disponiveis'] }}/{{ l['quantidade'] }}</span></td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="5" class="vazio">Nenhum livro encontrado.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <h3>Cadastrar livro</h3>
+                <form method="POST" action="{{ url_for('cadastrar_livro') }}">
+                    <div class="linha">
+                        <input type="text" name="titulo" placeholder="Título" required>
+                        <input type="text" name="autor" placeholder="Autor" required>
+                    </div>
+                    <div class="linha">
+                        <input type="number" name="ano" placeholder="Ano (opcional)" min="0">
+                        <input type="number" name="quantidade" placeholder="Quantidade" min="1" required>
+                        <button class="btn-preto">Cadastrar</button>
+                    </div>
+                </form>
+
+            {% elif aba == 'leitores' %}
+                <h2>Leitores</h2>
+                <table>
+                    <thead>
+                        <tr><th>ID</th><th>Nome</th><th>E-mail</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for r in leitores %}
+                            <tr><td>{{ r['id'] }}</td><td>{{ r['nome'] }}</td><td>{{ r['email'] }}</td></tr>
+                        {% else %}
+                            <tr><td colspan="3" class="vazio">Nenhum leitor cadastrado.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <h3>Cadastrar leitor</h3>
+                <form method="POST" class="linha">
+                    <input type="text" name="nome" placeholder="Nome" required>
+                    <input type="email" name="email" placeholder="E-mail" required>
+                    <button class="btn-preto">Cadastrar</button>
+                </form>
+
+            {% elif aba == 'emprestimos' %}
+                <h2>Empréstimos</h2>
+                <h3>Novo empréstimo</h3>
+                <form method="POST" class="linha">
+                    <select name="livro_id" required>
+                        <option value="">Escolha o livro</option>
+                        {% for l in livros %}
+                            <option value="{{ l['id'] }}">{{ l['titulo'] }} ({{ l['disponiveis'] }} disp.)</option>
+                        {% endfor %}
+                    </select>
+                    <select name="leitor_id" required>
+                        <option value="">Escolha o leitor</option>
+                        {% for r in leitores %}
+                            <option value="{{ r['id'] }}">{{ r['nome'] }}</option>
+                        {% endfor %}
+                    </select>
+                    <button class="btn-preto">Emprestar</button>
+                </form>
+
+                <h3>Em aberto</h3>
+                <table>
+                    <thead>
+                        <tr><th>ID</th><th>Livro</th><th>Leitor</th><th>Devolver até</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        {% for e in emprestimos %}
+                            <tr>
+                                <td>{{ e['id'] }}</td>
+                                <td>{{ e['titulo'] }}</td>
+                                <td>{{ e['leitor'] }}</td>
+                                <td>
+                                    {{ e['data_prevista'] | data_br }}
+                                    {% if e['data_prevista'] < hoje %}<span class="tag zerado">atrasado</span>{% endif %}
+                                </td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('devolver', emprestimo_id=e['id']) }}">
+                                        <button class="btn-claro">Devolver</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="5" class="vazio">Nenhum empréstimo em aberto.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+            {% elif aba == 'relatorios' %}
+                <h2>Relatórios</h2>
+                <h3>Livros mais emprestados</h3>
+                <table>
+                    <thead>
+                        <tr><th>#</th><th>Título</th><th>Autor</th><th>Empréstimos</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for l in ranking %}
+                            <tr><td>{{ loop.index }}º</td><td>{{ l['titulo'] }}</td><td>{{ l['autor'] }}</td><td>{{ l['total'] }}</td></tr>
+                        {% else %}
+                            <tr><td colspan="4" class="vazio">Ainda não há empréstimos.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <h3>Empréstimos atrasados</h3>
+                <table>
+                    <thead>
+                        <tr><th>Livro</th><th>Leitor</th><th>Devolver até</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for e in atrasados %}
+                            <tr><td>{{ e['titulo'] }}</td><td>{{ e['leitor'] }}</td><td>{{ e['data_prevista'] | data_br }}</td></tr>
+                        {% else %}
+                            <tr><td colspan="3" class="vazio">Nenhum empréstimo atrasado.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </main>
+    </div>
+</body>
+</html>
