@@ -1,56 +1,45 @@
-# Sistema de Biblioteca 📚
+# sistema-biblioteca
 
-Sistema de gerenciamento de biblioteca feito em Python com banco de dados SQLite, usado pelo terminal. Controla livros, leitores, empréstimos, devoluções e atrasos.
+Projeto que fiz para praticar Python com banco de dados (SQLite), junto com a disciplina de Banco de Dados da faculdade (TI - UFMS).
 
-Projeto feito para praticar **Banco de Dados** e **Algoritmos e Programação** do curso de TI da UFMS: modelagem de tabelas, chaves estrangeiras, `JOIN`, `GROUP BY` e integração do Python com SQL.
+É um sistema de biblioteca simples que roda no terminal. Dá pra cadastrar livros e leitores, fazer empréstimos e devoluções, e ver quem está com livro atrasado.
 
-## Funcionalidades
+## O que ele faz
 
-- **Cadastro de livros** com título, autor, ano e quantidade de exemplares.
-- **Busca de livros** por título ou autor, mostrando quantos exemplares estão disponíveis.
-- **Cadastro de leitores** com e-mail único.
-- **Empréstimos:** só permite emprestar se houver exemplar disponível. O prazo de devolução é de 14 dias.
-- **Devoluções:** calcula automaticamente os dias de atraso.
-- **Relatórios:** empréstimos em aberto, empréstimos atrasados e ranking dos livros mais emprestados.
-- **Dados de exemplo** para testar o sistema rapidamente (opção 10 do menu).
-- **Consultas SQL prontas** no arquivo `consultas.sql`.
+- cadastra livros (título, autor, ano e quantidade de exemplares)
+- busca livro por título ou autor
+- cadastra leitores (o e-mail não pode repetir)
+- registra empréstimo, mas só se tiver exemplar disponível
+- registra devolução e mostra quantos dias atrasou (o prazo é 14 dias)
+- lista empréstimos em aberto e atrasados
+- mostra os livros mais emprestados
+- tem uma opção pra colocar dados de exemplo e testar mais rápido
 
-## Tecnologias Utilizadas
+## Banco de dados
 
-- Python 3 (somente bibliotecas padrão)
-- SQLite3
-
-## Modelo do Banco de Dados
+Usei 3 tabelas: `livros`, `leitores` e `emprestimos`. A tabela de empréstimos liga as outras duas pelas chaves estrangeiras (`livro_id` e `leitor_id`).
 
 ```
-livros                   emprestimos                 leitores
------------              -----------------           ----------
-id (PK)        1 ──── N  id (PK)          N ──── 1   id (PK)
-titulo                   livro_id (FK)               nome
-autor                    leitor_id (FK)              email (único)
-ano                      data_emprestimo
-quantidade               data_prevista
-                         data_devolucao
+livros (1) ---- (N) emprestimos (N) ---- (1) leitores
 ```
 
-A quantidade de exemplares disponíveis não é guardada no banco: ela é calculada com `quantidade - empréstimos em aberto`, o que evita dados inconsistentes.
+Não guardei a quantidade disponível no banco. Ela é calculada na consulta (quantidade total menos os empréstimos que ainda não foram devolvidos), assim não corre o risco de ficar com número errado.
 
-## Como Executar o Projeto
+No arquivo `consultas.sql` deixei algumas consultas que usei pra estudar `JOIN`, `GROUP BY` e subconsulta.
 
-1. Clone ou baixe este repositório:
-   ```bash
-   git clone https://github.com/davipontodev/sistema-biblioteca.git
-   ```
-2. Entre na pasta e execute:
-   ```bash
-   cd sistema-biblioteca
-   python biblioteca.py
-   ```
-3. Escolha a opção **10** para carregar os dados de exemplo e explore o menu.
+## Como rodar
 
-O arquivo `biblioteca.db` é criado automaticamente na primeira execução.
+Precisa ter o Python 3 instalado. Não precisa instalar nenhuma biblioteca.
 
-## Exemplo de uso
+```bash
+git clone https://github.com/davipontodev/sistema-biblioteca.git
+cd sistema-biblioteca
+python biblioteca.py
+```
+
+Na primeira vez ele cria o arquivo `biblioteca.db` sozinho. Escolha a opção 10 no menu pra carregar os dados de exemplo.
+
+## Exemplo
 
 ```
   ID  Título                          Autor                 Ano    Disp.
@@ -61,3 +50,9 @@ O arquivo `biblioteca.db` é criado automaticamente na primeira execução.
   5   Sistemas de Banco de Dados      Elmasri e Navathe     2011    1/1
   4   Use a Cabeça! Python            Paul Barry            2018    2/2
 ```
+
+## O que quero melhorar
+
+- fazer uma interface gráfica ou versão web
+- adicionar multa por atraso
+- separar o código em mais arquivos
